@@ -1,9 +1,55 @@
+#ifndef MCTS_HEADER_PETTER
+#define MCTS_HEADER_PETTER
+//
 // Petter Strandmark 2013
 // petter.strandmark@gmail.com
 //
+// Monte Carlo Tree Search for finite games.
+//
+// Originally based on Python code at
+// http://mcts.ai/code/python.html
+//
+// This game engine can play any game defined by a state like this:
+/*
 
-#ifndef MCTS_HEADER_PETTER
-#define MCTS_HEADER_PETTER
+class GameState
+{
+public:
+	typedef int Move;
+	static const Move no_move = ...
+
+	void do_move(Move move);
+	void do_random_move();
+	bool has_moves() const;
+	std::vector<Move> get_moves() const;
+
+	// Returns a value in [0, 1].
+	double get_result(int current_player_to_move) const;
+
+	int player_to_move;
+
+	// ...
+private:
+	// ...
+};
+
+*/
+//
+// See the examples for more details. Given a suitable State, the
+// following function (tries to) compute the best move for the
+// player to move.
+//
+
+namespace MCTS
+{
+template<typename State>
+typename State::Move compute_move(const State& root_state,
+                                  const int max_iterations = 10000,
+								  bool verbose = false);
+}
+//
+//
+//
 
 #include <cstdlib>
 #include <iostream>
@@ -12,6 +58,10 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+#ifdef USE_OPENMP
+#include <omp.h>
+#endif
 
 namespace MCTS
 {
@@ -32,6 +82,10 @@ void assertion_failed(const char* expr, const char* file, int line);
 	#define dattest(expr) ((void)0)
 #endif
 
+//
+// This class is used to build the game tree. The root is created by the users and
+// the rest of the tree is created by add_node.
+//
 template<typename State>
 class Node
 {
@@ -74,11 +128,6 @@ private:
 	Node(const Node&);
 	Node& operator = (const Node&);
 };
-
-template<typename State>
-typename State::Move compute_move(const State& root_state,
-                                  const int max_iterations = 10000,
-								  bool verbose = false);
 
 
 /////////////////////////////////////////////////////////
@@ -227,27 +276,34 @@ typename State::Move compute_move(const State& root_state,
 		auto node = &root;
 		State state = root_state;
 
+		// Select a path through the tree to a leaf node.
 		while (!node->has_untried_moves() && node->has_children()) {
 			node = node->select_child_UCT();
 			state.do_move(node->move);
 		}
 
+		// If we are not already at the final state, expand the
+		// tree with a new node and move there.
 		if (node->has_untried_moves()) {
 			auto move = node->get_untried_move();
 			state.do_move(move);
 			node = node->add_child(move, state);
 		}
 
+		// We now play randomly until the game ends.
 		while (state.has_moves()) {
 			state.do_random_move();
 		}
 
+		// We have now reached a final state. Backpropagate the result
+		// up the tree to the root node.
 		while (node != nullptr) {
 			node->update(state.get_result(node->player_to_move));
 			node = node->parent;
 		}
 	}
 
+	// This is the move we are going to make.
 	auto best_child = root.best_child();
 
 	if (verbose) {
