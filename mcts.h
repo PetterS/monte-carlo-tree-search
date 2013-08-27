@@ -93,7 +93,11 @@ Node<State>::Node(const State& state) :
 	wins(0),
 	visits(0),
 	moves(state.get_moves())
-{ }
+{ 
+	for (auto child: children) {
+		delete child;
+	}
+}
 
 template<typename State>
 Node<State>::Node(const State& state, const Move& move_, Node* parent_) :
