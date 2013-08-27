@@ -43,7 +43,7 @@ public:
 
 	bool has_untried_moves() const;
 	Move get_untried_move() const;
-	Move best_move() const;
+	Node* best_child() const;
 
 	bool has_children() const
 	{
@@ -128,14 +128,14 @@ typename State::Move Node<State>::get_untried_move() const
 }
 
 template<typename State>
-typename State::Move Node<State>::best_move() const
+typename Node<State>* Node<State>::best_child() const
 {
 	attest(moves.empty());
 
 	std::sort(children.begin(), children.end(),
 		[](Node* a, Node* b) { return a->visits < b->visits; });
 	
-	return children.back()->move;
+	return children.back();
 }
 
 template<typename State>
@@ -248,13 +248,17 @@ typename State::Move compute_move(const State& root_state,
 		}
 	}
 
+	auto best_child = root.best_child();
+
 	if (verbose) {
-		std::cerr << root.tree_to_string(4);
-		std::cerr << endl;
+		//std::cerr << root.tree_to_string(4);
+		//std::cerr << endl;
 		std::cerr << root.tree_to_string(2);
+		std::cerr << "Best move: " << best_child->move
+		          << " (" << 100.0 * best_child->wins / max_iterations << "%)" << endl;
 	}
 
-	return root.best_move();
+	return best_child->move;
 }
 
 
