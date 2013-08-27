@@ -265,12 +265,17 @@ std::string Node<State>::indent_string(int indent) const
 
 template<typename State>
 typename State::Move compute_move(const State& root_state,
-                                  const int max_iterations ,
+                                  const int max_iterations,
 								  bool verbose)
 {
 	// Will support more players later.
 	attest(root_state.player_to_move == 1 || root_state.player_to_move == 2);
 	Node<State> root(root_state);
+
+	#ifdef USE_OPENMP
+	double start_time = ::omp_get_wtime();
+	double print_time = start_time;
+	#endif
 
 	for (int iter = 1; iter <= max_iterations; ++iter) {
 		auto node = &root;
@@ -301,6 +306,14 @@ typename State::Move compute_move(const State& root_state,
 			node->update(state.get_result(node->player_to_move));
 			node = node->parent;
 		}
+
+		#ifdef USE_OPENMP
+		double time = ::omp_get_wtime();
+		if (time - print_time >= 1.0 || iter == max_iterations) {
+			std::cerr << iter << " games played (" << double(iter) / (time - start_time) << " / second)." << endl;
+			print_time = time;
+		}
+		#endif
 	}
 
 	// This is the move we are going to make.
@@ -311,7 +324,8 @@ typename State::Move compute_move(const State& root_state,
 		//std::cerr << endl;
 		std::cerr << root.tree_to_string(2);
 		std::cerr << "Best move: " << best_child->move
-		          << " (" << 100.0 * best_child->wins / max_iterations << "%)" << endl;
+		          << " (" << 100.0 * best_child->visits / max_iterations << "% visits)"
+		          << " (" << 100.0 * best_child->wins / best_child->visits << "% wins)" << endl;
 	}
 
 	return best_child->move;
