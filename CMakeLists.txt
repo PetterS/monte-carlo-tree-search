@@ -35,6 +35,28 @@ ENDIF (NOT CMAKE_BUILD_TYPE)
 # C++11 support.
 include(EnableCPP11.cmake)
 
+SET (MY_LIBRARY_DEPENDENCIES)
+
+# Multithreading using OpenMP
+OPTION(OPENMP
+       "Enable multi-threading (requires OpenMP)"
+       ON)
+IF (${OPENMP})
+  FIND_PACKAGE(OpenMP)
+  IF(${OPENMP_FOUND})
+    MESSAGE("-- Found OpenMP.")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    ADD_DEFINITIONS(-DUSE_OPENMP)
+
+    IF (NOT MSVC)
+      # OpenMP needs to be included as a library on some platforms.
+      LIST(APPEND MY_LIBRARY_DEPENDENCIES gomp)
+    ENDIF (NOT MSVC)
+  ELSE(${OPENMP_FOUND})
+    MESSAGE("-- Can't find OpenMP. Continuing without it.")
+  ENDIF(${OPENMP_FOUND})
+ENDIF (${OPENMP})
+
 #
 # gcc settings.
 #
