@@ -76,7 +76,9 @@ private:
 };
 
 template<typename State>
-typename State::Move compute_move(const State& state, int player_just_moved);
+typename State::Move compute_move(const State& root_state,
+                                  const int max_iterations = 10000,
+								  bool verbose = false);
 
 
 /////////////////////////////////////////////////////////
@@ -210,7 +212,8 @@ std::string Node<State>::indent_string(int indent) const
 
 template<typename State>
 typename State::Move compute_move(const State& root_state,
-                                  const int max_iterations = 10000)
+                                  const int max_iterations ,
+								  bool verbose)
 {
 	// Will support more players later.
 	attest(root_state.player_to_move == 1 || root_state.player_to_move == 2);
@@ -241,9 +244,11 @@ typename State::Move compute_move(const State& root_state,
 		}
 	}
 
-	std::cerr << root.tree_to_string(4);
-	std::cerr << endl;
-	std::cerr << root.tree_to_string(2);
+	if (verbose) {
+		std::cerr << root.tree_to_string(4);
+		std::cerr << endl;
+		std::cerr << root.tree_to_string(2);
+	}
 
 	return root.best_move();
 }

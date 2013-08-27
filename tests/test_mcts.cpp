@@ -5,6 +5,8 @@
 
 #include <mcts.h>
 
+#include "games/nim.h"
+
 using namespace std;
 
 // Player 1 has two options:
@@ -128,4 +130,15 @@ TEST_CASE("dummy2")
 	TestGame state(2);
 	auto move = MCTS::compute_move(state, 1000);
 	CHECK(move == 1);
+}
+
+TEST_CASE("Nim_15")
+{
+	for (int chips = 4; chips <= 21; ++chips) {
+		if (chips % 4 != 0) {
+			NimState state(chips);
+			auto move = MCTS::compute_move(state, 100000);
+			CHECK(move == chips % 4);
+		}
+	}
 }

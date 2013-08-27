@@ -18,10 +18,10 @@ int main()
 		cout << "State: " << state.player_to_move << endl;
 		NimState::Move move;
 		if (state.player_to_move == 1) {
-			move = MCTS::compute_move(state, 100000);
+			move = MCTS::compute_move(state, 100000, true);
 		}
 		else {
-			move = MCTS::compute_move(state, 10);
+			move = MCTS::compute_move(state, 10, true);
 		}
 
 		cout << "Best move: " << move << endl;
