@@ -21,19 +21,17 @@ int main()
 			move = MCTS::compute_move(state, 100000, true);
 		}
 		else {
-			move = MCTS::compute_move(state, 10, true);
+			move = MCTS::compute_move(state, 100000, true);
 		}
 
 		cout << "Best move: " << move << endl;
 		state.do_move(move);
-
-		return 0;
 	}
-	if (state.get_result(1) == 1.0) {
+	if (state.get_result(2) == 1.0) {
 		cout << "Player 1 wins!" << endl;
 	}
-	else if (state.get_result(2) == 1.0) {
-		cout << "Player 1 wins!" << endl;
+	else if (state.get_result(1) == 1.0) {
+		cout << "Player 2 wins!" << endl;
 	}
 	else {
 		cout << "Nobody wins! (score: " << state.get_result(1) << " for player 1)" << endl;
