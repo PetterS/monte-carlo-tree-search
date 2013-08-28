@@ -18,7 +18,9 @@ public:
 	ConnectFourState(int num_rows_ = 6, int num_cols_ = 7)
 		: player_to_move(1),
 	      num_rows(num_rows_),
-	      num_cols(num_cols_)
+	      num_cols(num_cols_),
+		  last_col(-1),
+		  last_row(-1)
 	{ 
 		board.resize(num_rows, vector<char>(num_cols, player_markers[0]));
 	}
@@ -32,18 +34,21 @@ public:
 		int row = num_rows - 1;
 		while (board[row][move] != player_markers[0]) row--;
 		board[row][move] = player_markers[player_to_move];
+		last_col = move;
+		last_row = row;
 
 		player_to_move = 3 - player_to_move;
 	}
 
-	void do_random_move()
+	template<typename RandomEngine>
+	void do_random_move(RandomEngine* engine)
 	{
-		attest(has_moves());
+		dattest(has_moves());
 		check_invariant();
 		std::uniform_int_distribution<Move> moves(0, num_cols - 1);
 
 		while (true) {
-			auto move = moves(MCTS::random_engine);
+			auto move = moves(*engine);
 			if (board[0][move] == player_markers[0]) {
 				do_move(move);
 				return;
@@ -89,93 +94,54 @@ public:
 
 	char get_winner() const
 	{
+		if (last_col < 0) {
+			return player_markers[0];
+		}
+
+		// We only need to check around the last piece played.
+		auto piece = board[last_row][last_col];
+
 		// X X X X
-		for (int row = 0; row < num_rows; ++row) {
-			for (int col = 0; col < num_cols - 3; ++col) {
-				if (board[row][col] == player_markers[0]) {
-					continue;
-				}
-
-				bool is_win = true;
-				for (int i = 1; i < 4; ++i) {
-					if (board[row][col + i] != board[row][col]) {
-						is_win = false;
-						break;
-					}
-				}
-				if (is_win) {
-					return board[row][col];
-				}
-			}
+		int left = 0, right = 0;
+		for (int col = last_col - 1; col >= 0 && board[last_row][col] == piece; --col) left++;
+		for (int col = last_col + 1; col < num_cols && board[last_row][col] == piece; ++col) right++;
+		if (left + 1 + right >= 4) {
+			return piece;
 		}
 
 		// X
 		// X
 		// X
 		// X
-		for (int row = 0; row < num_rows - 3; ++row) {
-			for (int col = 0; col < num_cols; ++col) {
-				if (board[row][col] == player_markers[0]) {
-					continue;
-				}
-
-				bool is_win = true;
-				for (int i = 1; i < 4; ++i) {
-					if (board[row + i][col] != board[row][col]) {
-						is_win = false;
-						break;
-					}
-				}
-				if (is_win) {
-					return board[row][col];
-				}
-			}
+		int up = 0, down = 0;
+		for (int row = last_row - 1; row >= 0 && board[row][last_col] == piece; --row) up++;
+		for (int row = last_row + 1; row < num_rows && board[row][last_col] == piece; ++row) down++;
+		if (up + 1 + down >= 4) {
+			return piece;
 		}
 
 		// X
 		//  X
 		//   X
 		//    X
-		for (int row = 0; row < num_rows - 3; ++row) {
-			for (int col = 0; col < num_cols - 3; ++col) {
-				if (board[row][col] == player_markers[0]) {
-					continue;
-				}
-
-				bool is_win = true;
-				for (int i = 1; i < 4; ++i) {
-					if (board[row + i][col + i] != board[row][col]) {
-						is_win = false;
-						break;
-					}
-				}
-				if (is_win) {
-					return board[row][col];
-				}
-			}
+		up = 0;
+		down = 0;
+		for (int row = last_row - 1, col = last_col - 1; row >= 0 && col >= 0 && board[row][col] == piece; --row, --col) up++;
+		for (int row = last_row + 1, col = last_col + 1; row < num_rows && col < num_cols && board[row][col] == piece; ++row, ++col) down++;
+		if (up + 1 + down >= 4) {
+			return piece;
 		}
 
 		//    X
 		//   X
 		//  X
 		// X
-		for (int row = 3; row < num_rows; ++row) {
-			for (int col = 0; col < num_cols - 3; ++col) {
-				if (board[row][col] == player_markers[0]) {
-					continue;
-				}
-
-				bool is_win = true;
-				for (int i = 1; i < 4; ++i) {
-					if (board[row - i][col + i] != board[row][col]) {
-						is_win = false;
-						break;
-					}
-				}
-				if (is_win) {
-					return board[row][col];
-				}
-			}
+		up = 0;
+		down = 0;
+		for (int row = last_row + 1, col = last_col - 1; row < num_rows && col >= 0 && board[row][col] == piece; ++row, --col) up++;
+		for (int row = last_row - 1, col = last_col + 1; row >= 0 && col < num_cols && board[row][col] == piece; --row, ++col) down++;
+		if (up + 1 + down >= 4) {
+			return piece;
 		}
 
 		return player_markers[0];
@@ -183,7 +149,7 @@ public:
 
 	double get_result(int current_player_to_move) const
 	{
-		attest( ! has_moves());
+		dattest( ! has_moves());
 		check_invariant();
 
 		auto winner = get_winner();
@@ -231,7 +197,9 @@ private:
 	}
 
 	int num_rows, num_cols;
-	vector<vector<char>> board; 
+	vector<vector<char>> board;
+	int last_col;
+	int last_row;
 };
 
 ostream& operator << (ostream& out, const ConnectFourState& state)
