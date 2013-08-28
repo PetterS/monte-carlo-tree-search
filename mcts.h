@@ -73,7 +73,7 @@ typename State::Move compute_move(const State& root_state,
 //     60-71). Springer Berlin Heidelberg.
 //
 
-#include <atomic>
+#include <algorithm>
 #include <cstdlib>
 #include <future>
 #include <iostream>
@@ -207,7 +207,7 @@ typename State::Move Node<State>::get_untried_move(RandomEngine* engine) const
 }
 
 template<typename State>
-typename Node<State>* Node<State>::best_child() const
+Node<State>* Node<State>::best_child() const
 {
 	attest(moves.empty());
 
@@ -389,8 +389,8 @@ typename State::Move compute_move(const State& root_state,
 	}
 
 	// Merge the children of all root nodes.
-	map<State::Move, int> visits;
-	map<State::Move, double> wins;
+	map<typename State::Move, int> visits;
+	map<typename State::Move, double> wins;
 	for (int t = 0; t < options.number_of_threads; ++t) {
 		auto root = roots[t].get();
 		for (auto child = root->children.cbegin(); child != root->children.cend(); ++child) {
@@ -401,7 +401,7 @@ typename State::Move compute_move(const State& root_state,
 
 	// Find the node with the most visits.
 	int best_visits = -1;
-	State::Move best_move;
+	typename State::Move best_move = typename State::Move();
 	for (auto itr: visits) {
 		if (itr.second > best_visits) {
 			best_visits = itr.second;
