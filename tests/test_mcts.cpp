@@ -56,15 +56,16 @@ public:
 		player_to_move = 3 - player_to_move;
 	}
 
-	void do_random_move()
+	template<typename RandomEngine>
+	void do_random_move(RandomEngine* engine)
 	{
 		if (player_to_move == 1) {
 			std::uniform_int_distribution<Move> moves(1, 2);
-			do_move(moves(MCTS::random_engine));
+			do_move(moves(*engine));
 		}
 		else if (player_to_move == 2) {
 			std::uniform_int_distribution<Move> moves(1, 5);
-			do_move(moves(MCTS::random_engine));
+			do_move(moves(*engine));
 		}
 		
 	}
@@ -121,23 +122,26 @@ private:
 TEST_CASE("dummy1")
 {
 	TestGame state(1);
-	auto move = MCTS::compute_move(state, 1000);
+	auto move = MCTS::compute_move(state);
 	CHECK(move == 2);
 }
 
 TEST_CASE("dummy2")
 {
 	TestGame state(2);
-	auto move = MCTS::compute_move(state, 1000);
+	auto move = MCTS::compute_move(state);
 	CHECK(move == 1);
 }
 
-TEST_CASE("Nim_15")
+TEST_CASE("Nim")
 {
+	MCTS::ComputeOptions options;
+	options.max_iterations = 100000;
+
 	for (int chips = 4; chips <= 21; ++chips) {
 		if (chips % 4 != 0) {
 			NimState state(chips);
-			auto move = MCTS::compute_move(state, 100000);
+			auto move = MCTS::compute_move(state, options);
 			CHECK(move == chips % 4);
 		}
 	}

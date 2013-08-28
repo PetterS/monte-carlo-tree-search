@@ -9,6 +9,8 @@
 // Originally based on Python code at
 // http://mcts.ai/code/python.html
 //
+// Uses the "root parallelization" technique [1].
+//
 // This game engine can play any game defined by a state like this:
 /*
 
@@ -19,11 +21,14 @@ public:
 	static const Move no_move = ...
 
 	void do_move(Move move);
-	void do_random_move();
+	template<typename RandomEngine>
+	void do_random_move(*engine);
 	bool has_moves() const;
 	std::vector<Move> get_moves() const;
 
-	// Returns a value in [0, 1].
+	// Returns a value in {0, 0.5, 1}.
+	// This should not be an evaluation function, because it will only be
+	// called for finished games. Return 0.5 to indicate a draw.
 	double get_result(int current_player_to_move) const;
 
 	int player_to_move;
@@ -42,21 +47,43 @@ private:
 
 namespace MCTS
 {
+struct ComputeOptions
+{
+	int number_of_threads;
+	int max_iterations;
+	double max_time;
+	bool verbose;
+
+	ComputeOptions() :
+		number_of_threads(8),
+		max_iterations(10000),
+		max_time(-1.0), // default is no time limit.
+		verbose(false)
+	{ }
+};
+
 template<typename State>
 typename State::Move compute_move(const State& root_state,
-                                  const int max_iterations = 10000,
-								  bool verbose = false);
+                                  const ComputeOptions options = ComputeOptions());
 }
 //
 //
+// [1] Chaslot, G. M. B., Winands, M. H., & van Den Herik, H. J. (2008).
+//     Parallel monte-carlo tree search. In Computers and Games (pp. 
+//     60-71). Springer Berlin Heidelberg.
 //
 
+#include <atomic>
 #include <cstdlib>
+#include <future>
 #include <iostream>
+#include <map>
+#include <memory>
 #include <random>
 #include <set>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 #ifdef USE_OPENMP
@@ -69,8 +96,6 @@ using std::cerr;
 using std::endl;
 using std::vector;
 using std::size_t;
-
-std::mt19937_64 random_engine(std::mt19937_64::default_seed);
 
 void check(bool expr, const char* message);
 void assertion_failed(const char* expr, const char* file, int line);
@@ -96,7 +121,8 @@ public:
 	~Node();
 
 	bool has_untried_moves() const;
-	Move get_untried_move() const;
+	template<typename RandomEngine>
+	Move get_untried_move(RandomEngine* engine) const;
 	Node* best_child() const;
 
 	bool has_children() const
@@ -114,6 +140,9 @@ public:
 	const Move move;
 	Node* const parent;
 	const int player_to_move;
+	
+	//std::atomic<double> wins;
+	//std::atomic<int> visits;
 	double wins;
 	int visits;
 
@@ -169,11 +198,12 @@ bool Node<State>::has_untried_moves() const
 }
 
 template<typename State>
-typename State::Move Node<State>::get_untried_move() const
+template<typename RandomEngine>
+typename State::Move Node<State>::get_untried_move(RandomEngine* engine) const
 {
 	attest( ! moves.empty());
 	std::uniform_int_distribution<std::size_t> moves_distribution(0, moves.size() - 1);
-	return moves[moves_distribution(random_engine)];
+	return moves[moves_distribution(*engine)];
 }
 
 template<typename State>
@@ -195,7 +225,7 @@ Node<State>* Node<State>::select_child_UCT() const
 	auto key = [&] (Node* other)
 	{
 		return double(other->wins) / double(other->visits) +
-			std::sqrt(2.0 * std::log(this->visits) / other->visits);
+			std::sqrt(2.0 * std::log(double(this->visits)) / other->visits);
 	};
 
 	return *std::max_element(children.begin(), children.end(),
@@ -220,7 +250,10 @@ template<typename State>
 void Node<State>::update(double result)
 {
 	visits++;
+
 	wins += result;
+	//double my_wins = wins.load();
+	//while ( ! wins.compare_exchange_strong(my_wins, my_wins + result));
 }
 
 template<typename State>
@@ -264,21 +297,23 @@ std::string Node<State>::indent_string(int indent) const
 
 
 template<typename State>
-typename State::Move compute_move(const State& root_state,
-                                  const int max_iterations,
-								  bool verbose)
+std::unique_ptr<Node<State>>  compute_tree(const State& root_state,
+                                           const ComputeOptions& options,
+										   std::mt19937_64::result_type initial_seed)
 {
+	std::mt19937_64 random_engine(initial_seed);
+
 	// Will support more players later.
 	attest(root_state.player_to_move == 1 || root_state.player_to_move == 2);
-	Node<State> root(root_state);
+	auto root = std::unique_ptr<Node<State>>(new Node<State>(root_state));
 
 	#ifdef USE_OPENMP
 	double start_time = ::omp_get_wtime();
 	double print_time = start_time;
 	#endif
 
-	for (int iter = 1; iter <= max_iterations; ++iter) {
-		auto node = &root;
+	for (int iter = 1; iter <= options.max_iterations; ++iter) {
+		auto node = root.get();
 		State state = root_state;
 
 		// Select a path through the tree to a leaf node.
@@ -290,14 +325,14 @@ typename State::Move compute_move(const State& root_state,
 		// If we are not already at the final state, expand the
 		// tree with a new node and move there.
 		if (node->has_untried_moves()) {
-			auto move = node->get_untried_move();
+			auto move = node->get_untried_move(&random_engine);
 			state.do_move(move);
 			node = node->add_child(move, state);
 		}
 
 		// We now play randomly until the game ends.
 		while (state.has_moves()) {
-			state.do_random_move();
+			state.do_random_move(&random_engine);
 		}
 
 		// We have now reached a final state. Backpropagate the result
@@ -308,29 +343,91 @@ typename State::Move compute_move(const State& root_state,
 		}
 
 		#ifdef USE_OPENMP
-		double time = ::omp_get_wtime();
-		if (time - print_time >= 1.0 || iter == max_iterations) {
-			std::cerr << iter << " games played (" << double(iter) / (time - start_time) << " / second)." << endl;
-			print_time = time;
+		if (options.verbose) {
+			double time = ::omp_get_wtime();
+			if (time - print_time >= 1.0 || iter == options.max_iterations) {
+				std::cerr << iter << " games played (" << double(iter) / (time - start_time) << " / second)." << endl;
+				print_time = time;
+			}
 		}
 		#endif
 	}
 
-	// This is the move we are going to make.
-	auto best_child = root.best_child();
-
-	if (verbose) {
-		//std::cerr << root.tree_to_string(4);
-		//std::cerr << endl;
-		std::cerr << root.tree_to_string(2);
-		std::cerr << "Best move: " << best_child->move
-		          << " (" << 100.0 * best_child->visits / max_iterations << "% visits)"
-		          << " (" << 100.0 * best_child->wins / best_child->visits << "% wins)" << endl;
-	}
-
-	return best_child->move;
+	return root;
 }
 
+template<typename State>
+typename State::Move compute_move(const State& root_state,
+                                  const ComputeOptions options)
+{
+	using namespace std;
+
+	// Will support more players later.
+	attest(root_state.player_to_move == 1 || root_state.player_to_move == 2);
+
+	#ifdef USE_OPENMP
+	double start_time = ::omp_get_wtime();
+	#endif
+
+	// Start all jobs to compute trees.
+	vector<future<unique_ptr<Node<State>>>> root_futures;
+	ComputeOptions job_options = options;
+	job_options.verbose = false;
+	for (int t = 0; t < options.number_of_threads; ++t) {
+		auto func = [t, &root_state, &job_options] () -> std::unique_ptr<Node<State>>
+		{
+			return compute_tree(root_state, job_options, 1012411 * t + 12515);
+		};
+
+		root_futures.push_back(std::async(std::launch::async, func));
+	}
+
+	// Collect the results.
+	vector<unique_ptr<Node<State>>> roots;
+	for (int t = 0; t < options.number_of_threads; ++t) {
+		roots.push_back(std::move(root_futures[t].get()));
+	}
+
+	// Merge the children of all root nodes.
+	map<State::Move, int> visits;
+	map<State::Move, double> wins;
+	for (int t = 0; t < options.number_of_threads; ++t) {
+		auto root = roots[t].get();
+		for (auto child = root->children.cbegin(); child != root->children.cend(); ++child) {
+			visits[(*child)->move] += (*child)->visits;
+			wins[(*child)->move]   += (*child)->wins;
+		}
+	}
+
+	// Find the node with the most visits.
+	int best_visits = -1;
+	State::Move best_move;
+	for (auto itr: visits) {
+		if (itr.second > best_visits) {
+			best_visits = itr.second;
+			best_move = itr.first;
+		}
+	}
+
+	int games_played = options.number_of_threads * options.max_iterations;
+	if (options.verbose) {
+		double best_wins = wins[best_move];
+		std::cerr << "Best move: " << best_move
+		          << " (" << 100.0 * best_visits / double(games_played) << "% visits)"
+		          << " (" << 100.0 * best_wins / best_visits << "% wins)" << endl;
+	}
+
+	#ifdef USE_OPENMP
+	if (options.verbose) {
+		double time = ::omp_get_wtime();
+		std::cerr << games_played << " games played "
+		          << "(" << double(games_played) / (time - start_time) << " / second, "
+		          << options.number_of_threads << " parallel jobs)." << endl;
+	}
+	#endif
+
+	return best_move;
+}
 
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////

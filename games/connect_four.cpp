@@ -14,13 +14,19 @@ void main_program()
 
 	bool human_player = true;
 
+	MCTS::ComputeOptions player1_options, player2_options;
+	player1_options.max_iterations = 100000;
+	player1_options.verbose = true;
+	player2_options.max_iterations =  10000;
+	player2_options.verbose = true;
+
 	ConnectFourState state;
 	while (state.has_moves()) {
 		cout << endl << "State: " << state << endl;
 
 		ConnectFourState::Move move = ConnectFourState::no_move;
 		if (state.player_to_move == 1) {
-			move = MCTS::compute_move(state, 100000, true);
+			move = MCTS::compute_move(state, player1_options);
 			state.do_move(move);
 		}
 		else {
@@ -39,7 +45,7 @@ void main_program()
 				}
 			}
 			else {
-				move = MCTS::compute_move(state, 1000, true);
+				move = MCTS::compute_move(state, player2_options);
 				state.do_move(move);
 			}
 		}
@@ -54,7 +60,7 @@ void main_program()
 		cout << "Player 2 wins!" << endl;
 	}
 	else {
-		cout << "Nobody wins! (score: " << state.get_result(1) << " for player 1)" << endl;
+		cout << "Nobody wins!" << endl;
 	}
 }
 

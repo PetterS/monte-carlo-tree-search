@@ -29,14 +29,15 @@ public:
 		check_invariant();
 	}
 
-	void do_random_move()
+	template<typename RandomEngine>
+	void do_random_move(RandomEngine* engine)
 	{
 		attest(chips > 0);
 		check_invariant();
 
 		int max = std::min(3, chips);
 		std::uniform_int_distribution<Move> moves(1, max);
-		do_move(moves(MCTS::random_engine));
+		do_move(moves(*engine));
 
 		check_invariant();
 	}
