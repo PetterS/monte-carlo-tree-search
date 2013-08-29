@@ -76,6 +76,7 @@ typename State::Move compute_move(const State& root_state,
 #include <algorithm>
 #include <cstdlib>
 #include <future>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -304,6 +305,12 @@ std::unique_ptr<Node<State>>  compute_tree(const State& root_state,
 {
 	std::mt19937_64 random_engine(initial_seed);
 
+	attest(options.max_iterations >= 0 || options.max_time >= 0);
+	if (options.max_time >= 0) {
+		#ifndef USE_OPENMP
+		throw std::runtime_error("ComputeOptions::max_time requires OpenMP.");
+		#endif
+	}
 	// Will support more players later.
 	attest(root_state.player_to_move == 1 || root_state.player_to_move == 2);
 	auto root = std::unique_ptr<Node<State>>(new Node<State>(root_state));
@@ -313,7 +320,7 @@ std::unique_ptr<Node<State>>  compute_tree(const State& root_state,
 	double print_time = start_time;
 	#endif
 
-	for (int iter = 1; iter <= options.max_iterations; ++iter) {
+	for (int iter = 1; iter <= options.max_iterations || options.max_iterations < 0; ++iter) {
 		auto node = root.get();
 		State state = root_state;
 
@@ -344,11 +351,15 @@ std::unique_ptr<Node<State>>  compute_tree(const State& root_state,
 		}
 
 		#ifdef USE_OPENMP
-		if (options.verbose) {
+		if (options.verbose || options.max_time >= 0) {
 			double time = ::omp_get_wtime();
-			if (time - print_time >= 1.0 || iter == options.max_iterations) {
+			if (options.verbose && (time - print_time >= 1.0 || iter == options.max_iterations)) {
 				std::cerr << iter << " games played (" << double(iter) / (time - start_time) << " / second)." << endl;
 				print_time = time;
+			}
+
+			if (time - start_time >= options.max_time) {
+				break;
 			}
 		}
 		#endif
@@ -392,8 +403,10 @@ typename State::Move compute_move(const State& root_state,
 	// Merge the children of all root nodes.
 	map<typename State::Move, int> visits;
 	map<typename State::Move, double> wins;
+	long long games_played = 0;
 	for (int t = 0; t < options.number_of_threads; ++t) {
 		auto root = roots[t].get();
+		games_played += root->visits;
 		for (auto child = root->children.cbegin(); child != root->children.cend(); ++child) {
 			visits[(*child)->move] += (*child)->visits;
 			wins[(*child)->move]   += (*child)->wins;
@@ -408,20 +421,26 @@ typename State::Move compute_move(const State& root_state,
 			best_visits = itr.second;
 			best_move = itr.first;
 		}
+
+		if (options.verbose) {
+			cerr << "Move: " << itr.first
+			     << " (" << setw(2) << right << int(100.0 * itr.second / double(games_played) + 0.5) << "% visits)"
+			     << " (" << setw(2) << right << int(100.0 * wins[itr.first] / best_visits  + 0.5)    << "% wins)" << endl;
+		}
 	}
 
-	int games_played = options.number_of_threads * options.max_iterations;
 	if (options.verbose) {
 		double best_wins = wins[best_move];
-		std::cerr << "Best move: " << best_move
-		          << " (" << 100.0 * best_visits / double(games_played) << "% visits)"
-		          << " (" << 100.0 * best_wins / best_visits << "% wins)" << endl;
+		cerr << "----" << endl;
+		cerr << "Best: " << best_move
+		     << " (" << 100.0 * best_visits / double(games_played) << "% visits)"
+		     << " (" << 100.0 * best_wins / best_visits << "% wins)" << endl;
 	}
 
 	#ifdef USE_OPENMP
 	if (options.verbose) {
 		double time = ::omp_get_wtime();
-		std::cerr << games_played << " games played "
+		std::cerr << games_played << " games played in " << double(time - start_time) << " s. " 
 		          << "(" << double(games_played) / (time - start_time) << " / second, "
 		          << options.number_of_threads << " parallel jobs)." << endl;
 	}
