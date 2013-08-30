@@ -188,7 +188,8 @@ Node<State>::Node(const State& state, const Move& move_, Node* parent_) :
 	player_to_move(state.player_to_move),
 	wins(0),
 	visits(0),
-	moves(state.get_moves())
+	moves(state.get_moves()),
+	UCT_score(0)
 { }
 
 template<typename State>
@@ -224,6 +225,10 @@ template<typename State>
 Node<State>* Node<State>::select_child_UCT() const
 {
 	attest( ! children.empty() );
+	for (auto child: children) {
+		child->UCT_score = double(child->wins) / double(child->visits) +
+			std::sqrt(2.0 * std::log(double(this->visits + 1)) / child->visits);
+	}
 
 	return *std::max_element(children.begin(), children.end(),
 		[](Node* a, Node* b) { return a->UCT_score < b->UCT_score; });
@@ -251,11 +256,6 @@ void Node<State>::update(double result)
 	wins += result;
 	//double my_wins = wins.load();
 	//while ( ! wins.compare_exchange_strong(my_wins, my_wins + result));
-
-	if (parent != nullptr) {
-		UCT_score = double(wins) / double(visits) +
-			std::sqrt(2.0 * std::log(double(parent->visits)) / visits);
-	}
 }
 
 template<typename State>
