@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/PetterS/easy-IP.png)](https://travis-ci.org/PetterS/monte-carlo-tree-search)
+[![Build Status](https://travis-ci.org/PetterS/monte-carlo-tree-search.png)](https://travis-ci.org/PetterS/monte-carlo-tree-search)
 
 Features
 -----------
