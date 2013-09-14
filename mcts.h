@@ -175,11 +175,7 @@ Node<State>::Node(const State& state) :
 	visits(0),
 	moves(state.get_moves()),
 	UCT_score(0)
-{ 
-	for (auto child: children) {
-		delete child;
-	}
-}
+{ }
 
 template<typename State>
 Node<State>::Node(const State& state, const Move& move_, Node* parent_) :
@@ -194,7 +190,11 @@ Node<State>::Node(const State& state, const Move& move_, Node* parent_) :
 
 template<typename State>
 Node<State>::~Node()
-{ }
+{
+	for (auto child: children) {
+		delete child;
+	}
+}
 
 template<typename State>
 bool Node<State>::has_untried_moves() const
