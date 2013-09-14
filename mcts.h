@@ -148,7 +148,7 @@ public:
 	int visits;
 
 	std::vector<Move> moves;
-	mutable std::vector<Node*> children;
+	std::vector<Node*> children;
 
 private:
 	Node(const State& state, const Move& move, Node* parent);
