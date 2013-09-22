@@ -11,6 +11,7 @@
 #include <mcts.h>
 
 #include "go.h"
+#include "go_5row.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -35,7 +36,8 @@ class GoApp: public AppBasic
 	static const int board_y = 25;
 	static const int board_width = 40;
 
-	GoState<M, N> state;
+	typedef GoState<M, N> State;
+	State state;
 
 	enum PlayerType {HUMAN, COMPUTER};
 	PlayerType player1, player2;
@@ -46,7 +48,7 @@ class GoApp: public AppBasic
 	std::string error_string;
 
 	// Compute move.
-	std::future<GoState<M, N>::Move> computed_move;
+	std::future<State::Move> computed_move;
 	void next_player();
 	void start_compute_move();
 	void check_for_computed_move();
@@ -57,19 +59,24 @@ class GoApp: public AppBasic
 };
 
 GoApp::GoApp()
-{ }
+{ 
+	AllocConsole();
+	FILE* fp;
+	freopen_s(&fp,"CON","w",stderr);
+}
 
 void GoApp::setup()
 {
-	//state = GoState<M, N>(board);
+	//state = State(board);
 	player1 = COMPUTER;
-	player2 = HUMAN;
+	player2 = COMPUTER;
 
 	player1_options.max_iterations = -1;
-	player1_options.max_time = 2.0;
+	player1_options.max_time = 5.0;
+	player1_options.verbose = true;
 
 	player2_options.max_iterations = -1;
-	player2_options.max_time = 0.5;
+	player2_options.max_time = 1.0;
 
 	if (player1 == HUMAN) {
 		game_status = WAITING_FOR_USER;
@@ -97,7 +104,7 @@ void GoApp::start_compute_move()
 		options = player2_options;
 	}
 
-	GoState<M, N> state_copy = state;
+	auto state_copy = state;
 	computed_move = 
 		std::async(std::launch::async,
 			[state_copy, options]() 
@@ -105,9 +112,9 @@ void GoApp::start_compute_move()
 				auto best_move = MCTS::compute_move(state_copy, options);
 				return best_move;
 
-				// Single-threaded.
+				//// Single-threaded.
 				//auto tree = MCTS::compute_tree(state_copy, options, 1241 * std::time(0));
-				//typedef MCTS::Node<GoState<M, N>> Node;
+				//typedef MCTS::Node<State> Node;
 				//auto best_child = *std::max_element( tree->children.begin(), tree->children.end(), [](Node* lhs, Node* rhs) { return lhs->visits < rhs->visits; } );
 				//return best_child->move;
 			});
@@ -175,7 +182,7 @@ void GoApp::mouseDown(MouseEvent event)
 
 	try {
 		if (state.is_move_possible(i, j)) {
-			state.do_move(GoState<M, N>::ij_to_ind(i, j));
+			state.do_move(State::ij_to_ind(i, j));
 
 			// Are there any more moves possible?
 			if (state.get_moves().empty()) {
@@ -195,14 +202,14 @@ void GoApp::keyDown( KeyEvent event )
 {
 	if (event.getChar() == 'p') {
 		if (game_status == WAITING_FOR_USER) {
-			state.do_move(GoState<M, N>::pass);
+			state.do_move(State::pass);
 
 			// Computer makes the next move.
 			start_compute_move();
 		}
 	}
 	else if (event.getChar() == 'r') {
-		state = GoState<M, N>();
+		state = State();
 		setup();
 	}
 	else if (event.getChar() == 'd') {
@@ -259,11 +266,11 @@ void GoApp::draw()
 			gl::drawSolidCircle(pos, 4.0f );
 		}
 
-		if (state.get_pos(i, j) == GoState<M, N>::player1) {
+		if (state.get_pos(i, j) == State::player1) {
 			gl::color( 0.0f, 0.0f, 0.0f );
 			gl::drawSolidCircle(pos, board_width / 2 - 1);
 		}
-		else if (state.get_pos(i, j) == GoState<M, N>::player2) {
+		else if (state.get_pos(i, j) == State::player2) {
 			gl::color( 1.0f, 1.0f, 1.0f );
 			gl::drawSolidCircle(pos, board_width / 2 - 1);
 		}
