@@ -9,6 +9,8 @@ Features
   * Connect four (text-based)
   * Nim (text-based)
 
+![Build Status](screenshots/Go.png)
+
 Requirements
 ------------
  * C++11, nothing else, for the actual search algorithm.
