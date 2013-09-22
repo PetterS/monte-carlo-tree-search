@@ -238,6 +238,15 @@ void GoApp::draw()
 		gl::drawLine(Vec2f(x1, y), Vec2f(x2, y));
 	}
 
+	if (M == 9 && N == 9) {
+		gl::color( 0.0f, 0.0f, 0.0f );
+		gl::drawSolidCircle(Vec2f(board_x + 2 * board_width, board_y + 2 * board_width ), 3.0f);
+		gl::drawSolidCircle(Vec2f(board_x + 6 * board_width, board_y + 6 * board_width ), 3.0f);
+		gl::drawSolidCircle(Vec2f(board_x + 6 * board_width, board_y + 2 * board_width ), 3.0f);
+		gl::drawSolidCircle(Vec2f(board_x + 2 * board_width, board_y + 6 * board_width ), 3.0f);
+		gl::drawSolidCircle(Vec2f(board_x + 4 * board_width, board_y + 4 * board_width ), 3.0f);
+	}
+
 	for (int i = 0; i < M; ++i) {
 	for (int j = 0; j < N; ++j) {
 		Vec2f pos(board_x + j * board_width, board_y + i * board_width );
