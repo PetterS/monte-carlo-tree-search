@@ -77,19 +77,21 @@ public:
 		}}
 	}
 
-	unsigned char get_pos(int i, int j) const
+	virtual ~GoState() { }
+
+	virtual unsigned char get_pos(int i, int j) const
 	{
 		attest(ij_to_ind(i, j) >= 0);
 		return board[i][j];
 	}
 
-	void set_pos(int i, int j, unsigned char player)
+	virtual void set_pos(int i, int j, unsigned char player)
 	{
 		attest(ij_to_ind(i, j) >= 0);
 		board[i][j] = player;
 	}
 
-	unsigned int compute_hash_value() const
+	virtual unsigned int compute_hash_value() const
 	{
 		unsigned int value = 0;
 		for (int i = 0; i < M; ++i) {
@@ -99,12 +101,12 @@ public:
 		return value;
 	}
 
-	bool is_move_possible(int i, int j) const
+	virtual bool is_move_possible(int i, int j) const
 	{
 		return is_move_possible(i, j, player_to_move);
 	}
 
-	bool is_move_possible(const int i, const int j, const int player) const
+	virtual bool is_move_possible(const int i, const int j, const int player) const
 	{
 		const int opponent = 3 - player;
 
@@ -166,7 +168,7 @@ public:
 		}
 	}
 
-	bool is_eye(int i, int j, int player) const
+	virtual bool is_eye(int i, int j, int player) const
 	{
 		bool eye = true;
 		if (i > 0 && board[i - 1][j] != player) eye = false;
@@ -176,7 +178,7 @@ public:
 		return eye;
 	}
 
-	void do_move(Move move)
+	virtual void do_move(Move move)
 	{
 		depth++;
 
@@ -221,7 +223,7 @@ public:
 		player_to_move = opponent;
 	}
 
-	bool is_alive(int i_start, int j_start, std::set<std::pair<int, int>>* pieces) const
+	virtual bool is_alive(int i_start, int j_start, std::set<std::pair<int, int>>* pieces) const
 	{
 		if (board[i_start][j_start] == empty) {
 			// No piece here, so alive
@@ -270,7 +272,7 @@ public:
 		return false;
 	}
 
-	void check_alive(int i, int j)
+	virtual void check_alive(int i, int j)
 	{
 		std::set<std::pair<int, int>> pieces;
 		if (!is_alive(i, j, &pieces)) {
@@ -293,13 +295,13 @@ public:
 		do_move(move);
 	}
 
-	bool has_moves() const
+	virtual bool has_moves() const
 	{
 		// TODO: make faster.
 		return ! get_moves().empty();
 	}
 
-	std::vector<Move> get_moves() const
+	virtual std::vector<Move> get_moves() const
 	{
 		std::vector<Move> moves;
 		if (depth > 1000) {
@@ -326,7 +328,7 @@ public:
 		return moves;
 	}
 
-	int get_player_score(int player) const
+	virtual int get_player_score(int player) const
 	{
 		int score = 0;
 		for (int i = 0; i < M; ++i) {
@@ -343,7 +345,7 @@ public:
 		return score;
 	}
 
-	double get_result(int current_player_to_move) const
+	virtual double get_result(int current_player_to_move) const
 	{
 		int score1 = get_player_score(1);
 		int score2 = get_player_score(2);
@@ -367,7 +369,7 @@ public:
 		}
 	}
 
-	void dump_board(const char* file_name) const
+	virtual void dump_board(const char* file_name) const
 	{
 		std::ofstream fout(file_name);
 		fout << "static const int M = " << M << ";" << std::endl;
