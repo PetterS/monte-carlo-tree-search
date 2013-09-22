@@ -6,9 +6,10 @@ Features
 
 Requirements
 ------------
- * C++11, nothing else.
+ * C++11, nothing else, for the actual search algorithm.
  * CMake is useful for building.
  * If the compiler support OpenMP it will be used for timing.
+ * A graphical Go game is available if Cinder is found.
 
 Performance
 -----------
