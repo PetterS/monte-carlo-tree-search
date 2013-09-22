@@ -27,8 +27,8 @@ public:
 	mutable int depth;
 	int player_to_move;
 	typedef int Move;
-	static const Move no_move = -2;
-	static const Move pass    = -1;
+	static const Move no_move;
+	static const Move pass;
 
 	static int ij_to_ind(int i, int j)
 	{
@@ -194,7 +194,7 @@ public:
 				else if (board[ii][jj] == 2) sout << '2';
 				else sout << ".";
 			}
-			sout << endl;
+			sout << std::endl;
 		}
 
 		int i,j;
@@ -223,14 +223,14 @@ public:
 		std::set<std::pair<int, int>> pieces;
 		// Now the played stone must be alive.
 		if (board[i][j] != player_to_move || !is_alive(i, j, &pieces)) {
-			sout << "Moved at (" << i << ", " << j << ") player " << player_to_move << endl;
+			sout << "Moved at (" << i << ", " << j << ") player " << player_to_move << std::endl;
 			for (int ii = 0; ii < M; ++ii) {
 				for (int jj = 0; jj < N; ++jj) {
 					if (board[ii][jj] == 1) sout << '1';
 					else if (board[ii][jj] == 2) sout << '2';
 					else sout << ".";
 				}
-				sout << endl;
+				sout << std::endl;
 			}
 			throw std::runtime_error(sout.str().c_str());
 		}
@@ -385,17 +385,23 @@ public:
 	void dump_board(const char* file_name) const
 	{
 		std::ofstream fout(file_name);
-		fout << "static const int M = " << M << ";" << endl;
-		fout << "static const int N = " << N << ";" << endl;
-		fout << "char board[M][N+1] = {" << endl;
+		fout << "static const int M = " << M << ";" << std::endl;
+		fout << "static const int N = " << N << ";" << std::endl;
+		fout << "char board[M][N+1] = {" << std::endl;
 		for (int i = 0; i < M; ++i) {
 			fout << "\t\"";
 			for (int j = 0; j < N; ++j) {
 				if (board[i][j] == empty) fout << ".";
 				else fout << int(board[i][j]);
 			}
-			fout << "\"," << endl;
+			fout << "\"," << std::endl;
 		}
-		fout << "};" << endl;
+		fout << "};" << std::endl;
 	}
 };
+
+template<unsigned int M, unsigned int N>
+const typename GoState<M, N>::Move GoState<M, N>::no_move = -2;
+
+template<unsigned int M, unsigned int N>
+const typename GoState<M, N>::Move GoState<M, N>::pass = -1;
