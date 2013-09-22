@@ -57,6 +57,25 @@ IF (${OPENMP})
   ENDIF(${OPENMP_FOUND})
 ENDIF (${OPENMP})
 
+
+SET(USE_CINDER ON)
+FIND_PATH(CINDER_INCLUDE NAMES cinder/Cinder.h PATHS ${SEARCH_HEADERS})
+IF (NOT EXISTS ${CINDER_INCLUDE})
+	MESSAGE("-- Did not find Cinder include directory.")
+	SET(USE_CINDER OFF)
+ELSE()
+	MESSAGE("-- Found Cinder include directory.")
+ENDIF()
+
+FIND_LIBRARY(CINDER_LIB cinder)
+IF (NOT EXISTS ${CINDER_LIB})
+	MESSAGE("-- Did not find the Cinder library.")
+	SET(USE_CINDER OFF)
+ELSE()
+	MESSAGE("-- Found the Cinder library.")
+ENDIF()
+
+
 #
 # gcc settings.
 #
@@ -90,6 +109,10 @@ ENDIF (MSVC)
 #
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
 INCLUDE_DIRECTORIES(third-party/Catch)
+IF (${USE_CINDER})
+	MESSAGE("-- Will be using Cinder.")
+	INCLUDE_DIRECTORIES(${CINDER_INCLUDE})
+ENDIF()
 FILE(GLOB MCTS_HEADERS ${CMAKE_SOURCE_DIR}/*.h)
 
 ADD_SUBDIRECTORY(games)
