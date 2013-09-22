@@ -63,7 +63,7 @@ void GoApp::setup()
 {
 	//state = GoState<M, N>(board);
 	player1 = COMPUTER;
-	player2 = COMPUTER;
+	player2 = HUMAN;
 
 	player1_options.max_iterations = -1;
 	player1_options.max_time = 2.0;
@@ -102,18 +102,14 @@ void GoApp::start_compute_move()
 		std::async(std::launch::async,
 			[state_copy, options]() 
 			{ 
-				//auto best_move = MCTS::compute_move(state_copy, options);
-				//return best_move;
+				auto best_move = MCTS::compute_move(state_copy, options);
+				return best_move;
 
-				auto moves = state_copy.get_moves();
-				if (moves.size() == 1) {
-					return moves[0];
-				}
-
-				auto tree = MCTS::compute_tree(state_copy, options, 1241 * std::time(0));
-				typedef MCTS::Node<GoState<M, N>> Node;
-				auto best_child = *std::max_element( tree->children.begin(), tree->children.end(), [](Node* lhs, Node* rhs) { return lhs->visits < rhs->visits; } );
-				return best_child->move;
+				// Single-threaded.
+				//auto tree = MCTS::compute_tree(state_copy, options, 1241 * std::time(0));
+				//typedef MCTS::Node<GoState<M, N>> Node;
+				//auto best_child = *std::max_element( tree->children.begin(), tree->children.end(), [](Node* lhs, Node* rhs) { return lhs->visits < rhs->visits; } );
+				//return best_child->move;
 			});
 }
 
@@ -213,6 +209,13 @@ void GoApp::keyDown( KeyEvent event )
 		state.dump_board("board.txt");
 		error_string = "Board dumped.";
 		game_status = GAME_ERROR;
+	}
+	else if (event.getChar() == 'c') {
+		player1 = COMPUTER;
+		player2 = COMPUTER;
+		player1_options.max_time = 0.01;
+		player2_options.max_time = 0.01;
+		start_compute_move();
 	}
 }
 

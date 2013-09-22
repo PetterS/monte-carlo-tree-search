@@ -187,18 +187,10 @@ public:
 			return;
 		}
 
-		std::stringstream sout;
-		for (int ii = 0; ii < M; ++ii) {
-			for (int jj = 0; jj < N; ++jj) {
-				if (board[ii][jj] == 1) sout << '1';
-				else if (board[ii][jj] == 2) sout << '2';
-				else sout << ".";
-			}
-			sout << std::endl;
-		}
-
 		int i,j;
 		std::tie(i, j) = ind_to_ij(move);
+		attest(is_move_possible(i, j));
+
 		board[i][j] = player_to_move;
 
 		// We save the hash values before all captures as this is way easier
@@ -222,18 +214,6 @@ public:
 
 		std::set<std::pair<int, int>> pieces;
 		// Now the played stone must be alive.
-		if (board[i][j] != player_to_move || !is_alive(i, j, &pieces)) {
-			sout << "Moved at (" << i << ", " << j << ") player " << player_to_move << std::endl;
-			for (int ii = 0; ii < M; ++ii) {
-				for (int jj = 0; jj < N; ++jj) {
-					if (board[ii][jj] == 1) sout << '1';
-					else if (board[ii][jj] == 2) sout << '2';
-					else sout << ".";
-				}
-				sout << std::endl;
-			}
-			throw std::runtime_error(sout.str().c_str());
-		}
 		attest(board[i][j] == player_to_move);
 		attest(is_alive(i, j, &pieces));
 
@@ -319,6 +299,7 @@ public:
 	{
 		std::vector<Move> moves;
 		if (depth > 1000) {
+			attest(false);
 			return moves;
 		}
 
