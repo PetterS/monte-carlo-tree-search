@@ -244,7 +244,11 @@ public:
 			std::tie(i, j) = back;
 			
 			if (board[i][j] == player) {
-				pieces->emplace(i, j);
+
+				// Does not work in older GCC.
+				//pieces->emplace(i, j);
+				pieces->insert(std::make_pair(i, j));
+
 				if (i > 0) {
 					stack.emplace_back(i - 1, j);
 				}
