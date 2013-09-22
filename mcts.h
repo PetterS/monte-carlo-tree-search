@@ -300,7 +300,7 @@ std::string Node<State>::indent_string(int indent) const
 
 template<typename State>
 std::unique_ptr<Node<State>>  compute_tree(const State& root_state,
-                                           const ComputeOptions& options,
+                                           const ComputeOptions options,
                                            std::mt19937_64::result_type initial_seed)
 {
 	std::mt19937_64 random_engine(initial_seed);
@@ -376,6 +376,12 @@ typename State::Move compute_move(const State& root_state,
 
 	// Will support more players later.
 	attest(root_state.player_to_move == 1 || root_state.player_to_move == 2);
+
+	auto moves = root_state.get_moves();
+	attest(moves.size() > 0);
+	if (moves.size() == 1) {
+		return moves[0];
+	}
 
 	#ifdef USE_OPENMP
 	double start_time = ::omp_get_wtime();
