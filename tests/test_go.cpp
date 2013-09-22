@@ -77,6 +77,27 @@ TEST_CASE("go_ko_rule")
 	REQUIRE(!state.has_moves());
 }
 
+TEST_CASE("go_move_bug")
+{
+	static const int M = 9;
+	static const int N = 9;
+	char board[M][N+1] = {
+		"1........",
+		".........",
+		"...212...",
+		"..2.2....",
+		"...21....",
+		"...1.....",
+		".........",
+		".........",
+		".........",
+	};
+	auto state = GoState<M, N>(board);
+
+	CHECK( ! state.is_move_possible(3, 3));
+}
+
+
 TEST_CASE("go3")
 {
 	static const int M = 3;
