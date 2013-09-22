@@ -63,7 +63,7 @@ struct ComputeOptions
 };
 
 template<typename State>
-typename State::Move compute_move(const State& root_state,
+typename State::Move compute_move(const State root_state,
                                   const ComputeOptions options = ComputeOptions());
 }
 //
@@ -299,7 +299,7 @@ std::string Node<State>::indent_string(int indent) const
 
 
 template<typename State>
-std::unique_ptr<Node<State>>  compute_tree(const State& root_state,
+std::unique_ptr<Node<State>>  compute_tree(const State root_state,
                                            const ComputeOptions options,
                                            std::mt19937_64::result_type initial_seed)
 {
@@ -369,7 +369,7 @@ std::unique_ptr<Node<State>>  compute_tree(const State& root_state,
 }
 
 template<typename State>
-typename State::Move compute_move(const State& root_state,
+typename State::Move compute_move(const State root_state,
                                   const ComputeOptions options)
 {
 	using namespace std;
