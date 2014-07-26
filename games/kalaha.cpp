@@ -75,12 +75,13 @@ void main_program()
 		}
 	}
 
+	state.collect_seeds();
 	cout << endl << "Final state:\n" << state << endl;
 
-	if (state.get_result(2) == 1.0) {
+	if (state.get_result(2) > 0.5) {
 		cout << "Player 1 wins!" << endl;
 	}
-	else if (state.get_result(1) == 1.0) {
+	else if (state.get_result(1) > 0.5) {
 		cout << "Player 2 wins!" << endl;
 	}
 	else {

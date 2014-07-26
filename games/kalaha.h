@@ -13,7 +13,9 @@ class KalahaState
 public:
 	typedef short Move;
 	static const Move no_move   = -100;
-	static const Move pass_move = -1;
+	// I have no idea why GCC 4.8 does not allow initialization of
+	// pass_move here. Linking fails.
+	static const Move pass_move;
 
 	bool player_must_pass = false;
 	int player_to_move = 1;
@@ -157,18 +159,41 @@ public:
 			return 0.5;
 		}
 
+		// Win amount is in [0.0, 0.5]
+		double win_amount = 0.5 * abs(double(player1_sum - player2_sum)) / (player1_sum + player2_sum);
+		double win  = 0.5 + win_amount;
+		double lose = 0.5 - win_amount;
+		//win = 1.0;
+		//lose = 0.0;
+
 		if (player1_sum > player2_sum) {
-			return current_player_to_move == 1 ? 0.0 : 1.0;
+			return current_player_to_move == 1 ? lose : win;
 		}
 		else {
-			return current_player_to_move == 1 ? 1.0 : 0.0;
+			return current_player_to_move == 1 ? win : lose;
 		}
+	}
+
+	void collect_seeds()
+	{
+		check_invariant();
+		for (auto& seed: player1_bins) {
+			player1_store += seed;
+			seed = 0;
+		}
+
+		for (auto& seed: player2_bins) {
+			player2_store += seed;
+			seed = 0;
+		}
+		check_invariant();
 	}
 
 	void print(ostream& out) const
 	{
 		using namespace std;
 		check_invariant();
+
 		out << "Player " << player_to_move << " to move." << endl;
 
 		auto print_bins = [&out](const short bins[num_bins], bool reverse)
@@ -235,11 +260,13 @@ private:
 		short player1_sum = player1_store;
 		for (auto seed: player1_bins) {
 			player1_sum += seed;
+			attest(seed >= 0);
 		}
 
 		short player2_sum = player2_store;
 		for (auto seed: player2_bins) {
 			player2_sum += seed;
+			attest(seed >= 0);
 		}
 		attest(player1_sum + player2_sum == (num_bins * 2) * start_seeds);
 	}
@@ -258,3 +285,8 @@ ostream& operator << (ostream& out, const KalahaState<n>& state)
 	state.print(out);
 	return out;
 }
+
+
+// See comment at declaration of pass_move.
+template<short num_bins>
+const typename KalahaState<num_bins>::Move KalahaState<num_bins>::pass_move = -1;
