@@ -1,5 +1,8 @@
 [![Build Status](https://travis-ci.org/PetterS/monte-carlo-tree-search.png)](https://travis-ci.org/PetterS/monte-carlo-tree-search)
+
 This library is still very experimental. 
+The search algorithm is quite fast and seems to work pretty well, but the Go engine is too slow to be useful.
+The other games work well.
 
 Features
 -----------
@@ -8,6 +11,8 @@ Features
   * Go (with Cinder)
   * Connect four (text-based)
   * Nim (text-based)
+
+![Build Status](screenshots/Go.png)
 
 Requirements
 ------------
