@@ -227,7 +227,7 @@ Node<State>* Node<State>::select_child_UCT() const
 	attest( ! children.empty() );
 	for (auto child: children) {
 		child->UCT_score = double(child->wins) / double(child->visits) +
-			std::sqrt(2.0 * std::log(double(this->visits + 1)) / child->visits);
+			std::sqrt(2.0 * std::log(double(this->visits)) / child->visits);
 	}
 
 	return *std::max_element(children.begin(), children.end(),
