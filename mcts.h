@@ -431,7 +431,7 @@ typename State::Move compute_move(const State root_state,
 		if (options.verbose) {
 			cerr << "Move: " << itr.first
 			     << " (" << setw(2) << right << int(100.0 * itr.second / double(games_played) + 0.5) << "% visits)"
-			     << " (" << setw(2) << right << int(100.0 * wins[itr.first] / best_visits  + 0.5)    << "% wins)" << endl;
+			     << " (" << setw(2) << right << int(100.0 * wins[itr.first] / itr.second + 0.5)    << "% wins)" << endl;
 		}
 	}
 
