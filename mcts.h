@@ -420,23 +420,30 @@ typename State::Move compute_move(const State root_state,
 	}
 
 	// Find the node with the most visits.
-	int best_visits = -1;
+	double best_score = -1;
 	typename State::Move best_move = typename State::Move();
 	for (auto itr: visits) {
-		if (itr.second > best_visits) {
-			best_visits = itr.second;
-			best_move = itr.first;
+		auto move = itr.first;
+		double v = itr.second;
+		double w = wins[move];
+		// Expected success rate assuming a uniform prior (Beta(1, 1)).
+		// https://en.wikipedia.org/wiki/Beta_distribution
+		double expected_success_rate = (w + 1) / (v + 2);
+		if (expected_success_rate > best_score) {
+			best_move = move;
+			best_score = expected_success_rate;
 		}
 
 		if (options.verbose) {
 			cerr << "Move: " << itr.first
-			     << " (" << setw(2) << right << int(100.0 * itr.second / double(games_played) + 0.5) << "% visits)"
-			     << " (" << setw(2) << right << int(100.0 * wins[itr.first] / itr.second + 0.5)    << "% wins)" << endl;
+			     << " (" << setw(2) << right << int(100.0 * v / double(games_played) + 0.5) << "% visits)"
+			     << " (" << setw(2) << right << int(100.0 * w / v + 0.5)    << "% wins)" << endl;
 		}
 	}
 
 	if (options.verbose) {
-		double best_wins = wins[best_move];
+		auto best_wins = wins[best_move];
+		auto best_visits = visits[best_move];
 		cerr << "----" << endl;
 		cerr << "Best: " << best_move
 		     << " (" << 100.0 * best_visits / double(games_played) << "% visits)"
