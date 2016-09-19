@@ -419,7 +419,7 @@ typename State::Move compute_move(const State root_state,
 		}
 	}
 
-	// Find the node with the most visits.
+	// Find the node with the highest score.
 	double best_score = -1;
 	typename State::Move best_move = typename State::Move();
 	for (auto itr: visits) {
