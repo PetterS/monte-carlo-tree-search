@@ -69,7 +69,7 @@ typename State::Move compute_move(const State root_state,
 //
 //
 // [1] Chaslot, G. M. B., Winands, M. H., & van Den Herik, H. J. (2008).
-//     Parallel monte-carlo tree search. In Computers and Games (pp. 
+//     Parallel monte-carlo tree search. In Computers and Games (pp.
 //     60-71). Springer Berlin Heidelberg.
 //
 
@@ -98,8 +98,8 @@ using std::endl;
 using std::vector;
 using std::size_t;
 
-void check(bool expr, const char* message);
-void assertion_failed(const char* expr, const char* file, int line);
+static void check(bool expr, const char* message);
+static void assertion_failed(const char* expr, const char* file, int line);
 
 #define attest(expr) if (!(expr)) { ::MCTS::assertion_failed(#expr, __FILE__, __LINE__); }
 #ifndef NDEBUG
@@ -141,7 +141,7 @@ public:
 	const Move move;
 	Node* const parent;
 	const int player_to_move;
-	
+
 	//std::atomic<double> wins;
 	//std::atomic<int> visits;
 	double wins;
@@ -453,7 +453,7 @@ typename State::Move compute_move(const State root_state,
 	#ifdef USE_OPENMP
 	if (options.verbose) {
 		double time = ::omp_get_wtime();
-		std::cerr << games_played << " games played in " << double(time - start_time) << " s. " 
+		std::cerr << games_played << " games played in " << double(time - start_time) << " s. "
 		          << "(" << double(games_played) / (time - start_time) << " / second, "
 		          << options.number_of_threads << " parallel jobs)." << endl;
 	}
@@ -466,14 +466,14 @@ typename State::Move compute_move(const State root_state,
 /////////////////////////////////////////////////////////
 
 
-void check(bool expr, const char* message)
+static void check(bool expr, const char* message)
 {
 	if (!expr) {
 		throw std::invalid_argument(message);
 	}
 }
 
-void assertion_failed(const char* expr, const char* file_cstr, int line)
+static void assertion_failed(const char* expr, const char* file_cstr, int line)
 {
 	using namespace std;
 
