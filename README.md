@@ -1,3 +1,5 @@
+## This library has been merged into [monolith](unidecode) and will not be updated further here.
+
 [![Build Status](https://travis-ci.org/PetterS/monte-carlo-tree-search.png)](https://travis-ci.org/PetterS/monte-carlo-tree-search)
 
 The search algorithm is quite fast and seems to work pretty well.
