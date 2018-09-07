@@ -1,4 +1,4 @@
-## This library has been merged into [monolith](unidecode) and will not be updated further here.
+## This library has been merged into [monolith](https://github.com/PetterS/monolith) and will not be updated further here.
 
 [![Build Status](https://travis-ci.org/PetterS/monte-carlo-tree-search.png)](https://travis-ci.org/PetterS/monte-carlo-tree-search)
 
