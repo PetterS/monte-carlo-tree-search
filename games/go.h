@@ -44,9 +44,9 @@ public:
 
 
 	GoState():
-		player_to_move(1),
 		previous_board_hash_value(0),
-		depth(0)
+		depth(0),
+		player_to_move(1)
 	{ 
 		all_hash_values.insert(compute_hash_value());
 
@@ -58,9 +58,9 @@ public:
 	}
 
 	GoState(char board[M][N+1]):
-		player_to_move(1),
 		previous_board_hash_value(0),
-		depth(0)
+		depth(0),
+		player_to_move(1)
 	{
 		GoState<M, N> state;
 		for (int i = 0; i < M; ++i) {
