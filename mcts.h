@@ -244,7 +244,8 @@ Node<State>* Node<State>::add_child(const Move& move, const State& state)
 	auto itr = moves.begin();
 	for (; itr != moves.end() && *itr != move; ++itr);
 	attest(itr != moves.end());
-	moves.erase(itr);
+	std::iter_swap(itr, moves.end() - 1);
+	moves.resize(moves.size() - 1);
 	return node;
 }
 
