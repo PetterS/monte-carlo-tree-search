@@ -321,9 +321,10 @@ std::unique_ptr<Node<State>>  compute_tree(const State root_state,
 	double print_time = start_time;
 	#endif
 
+	State state;
 	for (int iter = 1; iter <= options.max_iterations || options.max_iterations < 0; ++iter) {
 		auto node = root.get();
-		State state = root_state;
+		state = root_state;
 
 		// Select a path through the tree to a leaf node.
 		while (!node->has_untried_moves() && node->has_children()) {
